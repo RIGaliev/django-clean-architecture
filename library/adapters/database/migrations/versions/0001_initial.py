@@ -32,6 +32,12 @@ class Migration(migrations.Migration):
             ],
             options={
                 "db_table": "book",
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("title", "year", "author"),
+                        name="ix__books__title_year_author",
+                    ),
+                ],
             },
         ),
         migrations.CreateModel(
@@ -49,11 +55,17 @@ class Migration(migrations.Migration):
                         serialize=False,
                     ),
                 ),
-                ("username", models.CharField(max_length=255, unique=True)),
-                ("email", models.CharField(max_length=255, unique=True)),
+                ("username", models.CharField(max_length=255)),
+                ("email", models.CharField(max_length=255)),
             ],
             options={
                 "db_table": "user",
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("username",), name="uq__users__username"
+                    ),
+                    models.UniqueConstraint(fields=("email",), name="uq__users__email"),
+                ],
             },
         ),
     ]

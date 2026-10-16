@@ -7,14 +7,12 @@ from collections.abc import Callable
 from functools import wraps
 from typing import ParamSpec, TypeVar
 
-from dishka import FromDishka, make_container
+from dishka import FromDishka
 from dishka.integrations.base import wrap_injection
+from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework.request import Request
-
-from library.adapters.database.di import DatabaseProvider
-from library.domains.di import DomainProvider
 
 T = TypeVar("T")
 P = ParamSpec("P")
@@ -36,15 +34,19 @@ def inject(func: Callable[P, T]) -> Callable[[Request, P.args, P.kwargs], T]:
 
 
 class ContainerMiddleware(MiddlewareMixin):
+    async_capable = False
+
     def __init__(self, get_response: Callable[[HttpRequest], HttpResponse]):
         self.get_response = get_response
-        self.container = make_container(
-            DatabaseProvider(debug=False), DomainProvider()
-        )  # TODO: make an argument
 
     def __call__(self, request: Request) -> HttpResponse:
-        request.dishka_container = self.container
-
-        response = self.get_response(request)
-
-        return response
+        # ASGI uses scope; WSGI test clients pass the container in environ.
+        container = getattr(request, "scope", request.META).get("dishka_container")
+        if container is None:
+            raise ImproperlyConfigured(
+                "Dishka container is missing. Initialize dependencies through "
+                "RestService.set_dependencies(app) and pass the container "
+                "in the request scope or WSGI environ."
+            )
+        request.dishka_container = container
+        return self.get_response(request)

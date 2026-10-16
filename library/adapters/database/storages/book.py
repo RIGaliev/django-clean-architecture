@@ -99,7 +99,7 @@ class BookStorage(IBookStorage):
         )
 
     def _raise_error(self, e: DatabaseError) -> NoReturn:
-        constraint = e.__cause__.__cause__.constraint_name  # type: ignore[union-attr]
+        constraint = e.__cause__.diag.constraint_name
         if constraint == "ix__books__title_year_author":
             raise EntityAlreadyExistsException("Book already exists") from e
         raise LibraryException(message="Unknown error") from e
