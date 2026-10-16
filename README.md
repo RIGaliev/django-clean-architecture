@@ -28,6 +28,23 @@ Start postgres container described in `docker-compose.dev.yaml` from scratch:
 make local
 ```
 
+### How to run the REST service?
+
+Start the Django ASGI application with aiomisc and Uvicorn:
+
+```bash
+.venv/bin/python -m library
+```
+
+The service listens on port 8000 and is available locally at
+`http://127.0.0.1:8000`. Django routes and middleware are configured in
+`library/presentors/rest/settings.py`. `RestService.set_dependencies(app)` attaches
+a Dishka container to the ASGI `RestApplication` wrapper, which passes it to Django
+through the request scope. The service closes the container after the HTTP server
+stops. The Django test client fixture initializes dependencies through the same
+service method and passes the container in WSGI environ. Other entry points must
+explicitly initialize and pass a container; middleware does not create one.
+
 ### How to run tests?
 
 The tests must be run after the dependencies are installed and when the `make local` process is running separately:

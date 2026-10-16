@@ -94,7 +94,9 @@ class UserStorage(IUserStorage):
         )
 
     def _raise_error(self, e: DatabaseError) -> NoReturn:
-        constraint = e.__cause__.__cause__.constraint_name  # type: ignore[union-attr]
-        if constraint in ("uq__users__username", "uq__users__email"):
-            raise EntityAlreadyExistsException("Book already exists") from e
+        constraint = e.__cause__.diag.constraint_name
+        if constraint == "uq__users__username":
+            raise EntityAlreadyExistsException("User already exists") from e
+        elif constraint == "uq__users__email":
+            raise EntityAlreadyExistsException("User already exists") from e
         raise LibraryException(message="Unknown error") from e
